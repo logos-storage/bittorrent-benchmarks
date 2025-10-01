@@ -1,4 +1,4 @@
-FROM bitnami/kubectl:1.31.1 AS kubectl
+FROM bitnamilegacy/kubectl:1.31.1 AS kubectl
 
 FROM python:3.12-slim
 
