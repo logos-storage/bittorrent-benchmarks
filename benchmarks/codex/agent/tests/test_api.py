@@ -25,7 +25,7 @@ async def test_should_create_file():
     )
 
     assert response.status_code == 200
-    assert response.headers["content-type"] == "text/plain"
+    assert response.headers["content-type"].startswith("text/plain")
     assert response.charset_encoding == "utf-8"
 
     manifest = await codex_client.manifest(response.text)
