@@ -47,11 +47,13 @@ spec:
           imagePullPolicy: {{ include "benchmark.harness.imagePullPolicy" . }}
           ports:
             - containerPort: 6890
+          {{- if and .Values.experiment.memory (ne .Values.experiment.memory "") }}
           resources:
             requests:
               memory: {{ .Values.experiment.memory | quote }}
             limits:
               memory: {{ .Values.experiment.memory | quote }}
+          {{- end }}
           env:
             - name: POD_IP
               valueFrom:
