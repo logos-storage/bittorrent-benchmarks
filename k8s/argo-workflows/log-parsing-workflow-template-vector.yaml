@@ -1,0 +1,142 @@
+# Workflow template for parsing logs for an experiment group using Vector.
+#
+# Collect logs from Kubernetes pods and writes them to a PVC as JSONL files.
+# The workflow scales down the Vector aggregator to
+# access the RWO PVC, parses the logs, then scales it back up.
+#
+# Uses synchronization to ensure only one workflow can parse logs at a time,
+# preventing conflicts when multiple experiments finish simultaneously.
+
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: log-parsing-workflow-vector
+spec:
+  serviceAccountName: codex-benchmarks-workflows
+  entrypoint: log-parsing-workflow
+
+  # Synchronization: Only one workflow can access vector-logs-pvc at a time
+  synchronization:
+    semaphore:
+      configMapKeyRef:
+        name: vector-log-parsing-semaphore
+        key: workflow
+
+  # Timeout for entire workflow ( 2 hours )
+  activeDeadlineSeconds: 7200
+
+  # Sadly we need a PVC to share data among steps. This is a limitation of Argo.
+  volumeClaimTemplates:
+    - metadata:
+        name: logs
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: 50Gi
+        storageClassName: do-block-storage
+
+  arguments:
+    parameters:
+      - name: experimentGroupId
+      - name: bucket
+        value: "codex-benchmarks"
+      - name: vectorLogsPath
+        value: "/mnt/vector-logs"
+
+  volumes:
+    - name: vector-logs
+      persistentVolumeClaim:
+        claimName: vector-logs-pvc
+
+  templates:
+    - name: log-parsing-workflow
+      steps:
+        - - name: scale-down-vector
+            template: scale-down-vector
+
+        - - name: parse-logs
+            template: parse-logs
+
+        - - name: scale-up-vector
+            template: scale-up-vector
+
+        - - name: tar-and-upload
+            template: tar-and-upload
+
+    - name: parse-logs
+      script:
+        image: codexstorage/bittorrent-benchmarks:latest
+        command: ["/bin/bash"]
+        source: |
+          set -e
+          poetry run python -m benchmarks.cli logs source \
+            --output-dir "/var/logs/{{workflow.parameters.experimentGroupId}}" \
+            "{{workflow.parameters.experimentGroupId}}" \
+            vector \
+            {{workflow.parameters.vectorLogsPath}}/benchmarks-*.jsonl \
+            --chronological
+
+        volumeMounts:
+          - name: logs
+            mountPath: "/var/logs"
+          - name: vector-logs
+            mountPath: "{{workflow.parameters.vectorLogsPath}}"
+            readOnly: true
+
+    - name: tar-and-upload
+      script:
+        image: codexstorage/bittorrent-benchmarks-workflows:latest
+        command: ["/bin/bash"]
+        source: |
+          set -e
+
+          if [ -z "$(ls /var/logs/{{workflow.parameters.experimentGroupId}})" ]; then
+            echo "No logs found."
+            exit 1
+          fi
+
+          echo "Creating tarball."
+          tar -czvf \
+            "/var/logs/{{workflow.parameters.experimentGroupId}}.tar.gz" \
+            -C /var/logs \
+            "{{workflow.parameters.experimentGroupId}}"
+
+          echo "Configure s3 alias for endpoint ${AWS_ENDPOINT_URL}."
+          mc alias set s3 "${AWS_ENDPOINT_URL}" "${AWS_ACCESS_KEY_ID}" "${AWS_SECRET_ACCESS_KEY}"
+
+          echo "Copy logs."
+          mc cp "/var/logs/{{workflow.parameters.experimentGroupId}}.tar.gz"\
+            "s3/{{workflow.parameters.bucket}}/logs/{{workflow.parameters.experimentGroupId}}.tar.gz"
+
+        envFrom:
+          - secretRef:
+              name: s3-codex-benchmarks
+
+        volumeMounts:
+          - name: logs
+            mountPath: "/var/logs"
+
+    - name: scale-down-vector
+      resource:
+        action: patch
+        manifest: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: vector-aggregator
+            namespace: argo
+          spec:
+            replicas: 0
+
+    - name: scale-up-vector
+      resource:
+        action: patch
+        manifest: |
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: vector-aggregator
+            namespace: argo
+          spec:
+            replicas: 1

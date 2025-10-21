@@ -45,7 +45,9 @@ spec:
         value: "false"
       - name: codexLogLevel
         value: "INFO"
-        # value: "DEBUG;trace:swarm\\,blockexcnetworkpeer" # make sure to escape commas or helm will fail
+        # value: "DEBUG;trace:blockexcengine\\,blockexcnetworkpeer\\,blockexcnetwork\\,discoveryengine" # make sure to escape commas or helm will fail
+      - name: codexMemory
+        value: ""
 
       ###################################### Experiment Retries #############################################
       # Allow the workflow to replay failed experiments from a previous run instead of running a new set.
@@ -97,6 +99,9 @@ spec:
       # disable this when running local experiments.
       - name: parseLogs
         value: "false"
+      # Which log parsing workflow template to use (one of: log-parsing-workflow, log-parsing-workflow-vector)
+      - name: logParsingWorkflow
+        value: "log-parsing-workflow-vector"
 
       #######################################################################################################
 
@@ -262,7 +267,7 @@ spec:
             generateName: log-parsing-
           spec:
             workflowTemplateRef:
-              name: log-parsing-workflow
+              name: {{workflow.parameters.logParsingWorkflow}}
             arguments:
               parameters:
                 - name: experimentGroupId
@@ -496,7 +501,8 @@ spec:
             --set "experiment.codexLogLevel={{workflow.parameters.codexLogLevel}}"\
             --set experiment.seederSets={{inputs.parameters.seederSets}}\
             --set deployment.minikubeEnv={{workflow.parameters.minikubeEnv}}\
-            --set deployment.removeData={{workflow.parameters.removeData}}\
+            --set experiment.removeData={{workflow.parameters.removeData}}\
+            --set experiment.memory={{workflow.parameters.codexMemory}}\
             --set deployment.nodeTag={{workflow.parameters.nodeTag}}\
             --set deployment.runnerTag={{workflow.parameters.runnerTag}}\
             --set deployment.region={{workflow.parameters.region}}

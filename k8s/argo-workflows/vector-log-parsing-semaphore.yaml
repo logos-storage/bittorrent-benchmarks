@@ -1,0 +1,11 @@
+# Semaphore for Vector log parsing workflow synchronization
+# Ensures only one log parsing workflow can run at a time to avoid conflicts
+# with the RWO vector-logs-pvc and Vector aggregator scaling
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-log-parsing-semaphore
+  namespace: argo
+data:
+  workflow: "1"  # Only 1 workflow can hold this semaphore at a time
