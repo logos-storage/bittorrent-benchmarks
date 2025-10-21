@@ -1,0 +1,93 @@
+# Vector Aggregator Deployment
+# Receives logs from Vector Agents (DaemonSet) and writes to PVC
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vector-aggregator
+  namespace: argo
+  labels:
+    app.kubernetes.io/name: vector-aggregator
+    app.kubernetes.io/instance: vector
+    app.kubernetes.io/component: Aggregator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: vector-aggregator
+      app.kubernetes.io/instance: vector
+      app.kubernetes.io/component: Aggregator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: vector-aggregator
+        app.kubernetes.io/instance: vector
+        app.kubernetes.io/component: Aggregator
+    spec:
+      serviceAccountName: vector
+      # Schedule aggregator on infra node to avoid competing with benchmark workloads
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: workload-type
+                    operator: In
+                    values:
+                      - infra
+      containers:
+        - name: vector
+          image: timberio/vector:0.34.0-distroless-libc
+          args:
+            - --config
+            - /etc/vector/vector.yaml
+          env:
+            - name: VECTOR_LOG
+              value: "info"
+          ports:
+            - containerPort: 6000
+              name: vector
+              protocol: TCP
+          volumeMounts:
+            - name: config
+              mountPath: /etc/vector
+              readOnly: true
+            - name: data
+              mountPath: /vector-data
+            - name: vector-logs
+              mountPath: /vector-logs
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+      volumes:
+        - name: config
+          configMap:
+            name: vector-aggregator-config
+        - name: data
+          emptyDir: {}
+        - name: vector-logs
+          persistentVolumeClaim:
+            claimName: vector-logs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vector-aggregator
+  namespace: argo
+  labels:
+    app.kubernetes.io/name: vector-aggregator
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6000
+      targetPort: 6000
+      protocol: TCP
+      name: vector
+  selector:
+    app.kubernetes.io/name: vector-aggregator
+    app.kubernetes.io/instance: vector
+    app.kubernetes.io/component: Aggregator

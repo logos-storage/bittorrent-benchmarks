@@ -1,0 +1,15 @@
+# Persistent Volume Claim for Vector to collect benchmark logs.
+# This PVC uses block storage which will be mounted by Vector Aggregator to write logs.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: vector-logs-pvc
+  namespace: argo
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: do-block-storage
+  resources:
+    requests:
+      storage: 50Gi

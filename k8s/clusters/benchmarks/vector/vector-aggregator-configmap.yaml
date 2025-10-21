@@ -1,0 +1,32 @@
+# Vector Aggregator configuration
+# Receives logs from Vector Agents and writes to file
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-aggregator-config
+  namespace: argo
+data:
+  vector.yaml: |
+    data_dir: /vector-data
+
+    sources:
+      vector-agents:
+        type: vector
+        address: 0.0.0.0:6000
+        acknowledgements:
+          enabled: true
+
+    sinks:
+      file-output:
+        type: file
+        inputs: [vector-agents]
+        path: "/vector-logs/benchmarks-%Y-%m-%d.jsonl"
+        encoding:
+          codec: json
+        acknowledgements:
+          enabled: true
+        buffer:
+          type: disk
+          max_size: 301989888  # 312MB for aggregator
+          when_full: block

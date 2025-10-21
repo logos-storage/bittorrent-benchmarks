@@ -1,0 +1,27 @@
+# RBAC permissions for log parsing workflow to scale Vector Aggregator
+# Allows the workflow to scale down/up the aggregator to access the RWO PVC
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vector-aggregator-scaler
+  namespace: argo
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "patch", "update"]
+    resourceNames: ["vector-aggregator"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: codex-workflows-vector-aggregator-scaler
+  namespace: argo
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vector-aggregator-scaler
+subjects:
+  - kind: ServiceAccount
+    name: codex-benchmarks-workflows
+    namespace: argo

@@ -1,0 +1,36 @@
+# Vector configuration for collecting benchmark pod logs
+# This ConfigMap contains the Vector pipeline configuration
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vector-config
+  namespace: argo
+data:
+  vector.yaml: |
+    data_dir: /vector-data
+
+    sources:
+      benchmark-experiments-source:
+        type: kubernetes_logs
+        extra_label_selector: "app.kubernetes.io/name=codex-benchmarks"
+        node_annotation_fields:
+          node_labels: ""
+        pod_annotation_fields:
+          container_id: ""
+          container_image: ""
+          container_image_id: ""
+          pod_node_name: ""
+          pod_owner: ""
+          pod_uid: ""
+          pod_ip: ""
+          pod_ips: ""
+        glob_minimum_cooldown_ms: 5000
+
+    sinks:
+      output:
+        type: file
+        inputs: [benchmark-experiments-source]
+        path: "/vector-logs/benchmarks-%Y-%m-%d.jsonl"
+        encoding:
+          codec: json
