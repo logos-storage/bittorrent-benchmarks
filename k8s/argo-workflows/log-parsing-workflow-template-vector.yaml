@@ -51,15 +51,13 @@ spec:
 
   templates:
     - name: log-parsing-workflow
+      onExit: scale-up-vector
       steps:
         - - name: scale-down-vector
             template: scale-down-vector
 
         - - name: parse-logs
             template: parse-logs
-
-        - - name: scale-up-vector
-            template: scale-up-vector
 
         - - name: tar-and-upload
             template: tar-and-upload
