@@ -208,3 +208,28 @@ compute_compact_summary <- function(download_ecdf) {
                 names_from = completed, values_from = median)
 }
 
+compute_speedups <- function(benchmarks, baseline, compare) {
+  baseline_data <- benchmarks |>
+    filter(label == baseline) |>
+    select(
+      experiment_type, label, network_size, seeders, leechers, file_size, median
+    ) |>
+    rename(baseline_median = median)
+
+
+  lapply(compare, function(compare_label) {
+    browser()
+    benchmarks |>
+      filter(label == compare_label) |>
+      inner_join(
+        baseline_data,
+        by = c('network_size', 'seeders', 'leechers', 'file_size')
+      ) |>
+      mutate(
+        relative_median = median / baseline_median
+      ) |>
+      mutate(label = label.x) |>
+      select(-baseline_median, -label.y, -label.x)
+  }) |>
+    bind_rows()
+}

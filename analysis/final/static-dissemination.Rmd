@@ -111,23 +111,11 @@ DT::datatable(
 ```
 
 ```{r echo = FALSE}
-relative_performance <- benchmarks |>
-  filter(experiment_type == 'deluge_experiment_config_log_entry') |>
-  transmute(
-    file_size, network_size, seeders, leechers, deluge_median = median,
-  ) |>
-  inner_join(
-    benchmarks |> 
-      filter(experiment_type == 'codex_experiment_config_log_entry') |>
-      select(
-        file_size, network_size, seeders, leechers, codex_median = median
-      ),
-    by = c('file_size', 'network_size', 'seeders', 'leechers')
-  ) |>
-  mutate(
-    performance = codex_median / deluge_median,
-    seeder_ratio = seeders / network_size
-  )
+relative_performance <- compute_speedups(
+  benchmarks = benchmarks,
+  base = 'deluge',
+  compare = c('codex-baseline', 'codex-optimized')
+)
 ```
 
 ## Median Download Speed
@@ -186,15 +174,15 @@ Let $t_d$ and $t_c$ be the median times that Deluge and Codex, respectively, tak
 When $m < 1$, Codex is faster than Deluge. It is otherwise $m$ times slower to download the same file.
 
 ```{r fig.cap='Median downlaod time ratio for Codex and Deluge', fig.width = 11, message = FALSE, echo = FALSE}
-ggplot(relative_performance) +
-  geom_line(aes(x = network_size, y = performance, col = file_size), lwd=1) +
+ggplot(relative_performance, aes(col = label, group = label)) +
+  geom_line(aes(x = network_size, y = relative_median, col = label), lwd=1) +
   geom_hline(yintercept = 1, linetype = 'dashed', col = 'darkgray') +
-  geom_point(aes(x = network_size, y = performance, col = file_size)) +
-  ylab('median Codex/Deluge performance ratio') +
+  geom_point(aes(x = network_size, y = relative_median, col = label)) +
+  ylab('median speedup/slowdown over Deluge') +
   annotate('text', label = 'faster', x = 29, y = 0, col = 'darkgreen') +
   annotate('text', label = 'slower', x = 28.5, y = 2, col = 'darkred') +
   theme_minimal(base_size=15) +
-  scale_color_discrete(name = 'file size') +
+  scale_color_discrete(name = '') +
   facet_grid(
     file_size ~ seeder_ratio,
     labeller = labeller(
