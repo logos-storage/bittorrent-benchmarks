@@ -31,11 +31,9 @@ devtools::load_all()
 ```
 
 ```{r message = FALSE, include = !knitr::is_html_output()}
-experiments <- read_all_experiments('./data/devnet/g1740079931/', prefix='codex.') |>
-  merge_experiments(read_all_experiments('./data/devnet/g1740498004/', prefix='codex.r1.')) |>
-  merge_experiments(read_all_experiments('./data/devnet/g1740320977/', prefix='deluge.')) |>
-  merge_experiments(read_all_experiments('./data/devnet/g1740585825/', prefix='deluge.r1.')) |>
-  merge_experiments(read_all_experiments('./data/devnet/g1740593730/', prefix='deluge.r2'))
+experiments <- read_all_experiments('./data/devnet/optimized/g1761924045/', label = 'deluge') |>
+  merge_experiments(read_all_experiments('./data/devnet/optimized/g1762505060/', label ='codex-baseline')) |>
+  merge_experiments(read_all_experiments('./data/devnet/optimized/g1761729711/', label = 'codex-optimized'))
 ```
 
 ```{r include = !knitr::is_html_output()}
@@ -60,6 +58,7 @@ benchmarks <- lapply(experiments, function(experiment) {
     } else {
       completion |> mutate(
         experiment_type = meta$experiment_type,
+        label = experiment$label,
         network_size = meta$nodes$network_size,
         seeders = meta$seeders,
         leechers = network_size - meta$seeders,
@@ -89,7 +88,7 @@ benchmarks <- lapply(experiments, function(experiment) {
 
 ```{r echo = FALSE}
 benchmarks <- benchmarks |>
-  group_by(experiment_type, network_size, seeders, leechers, file_size) |>
+  group_by(experiment_type, label, network_size, seeders, leechers, file_size) |>
   slice_min(missing, n = 1, with_ties = FALSE) |>
   ungroup()
 ```
@@ -134,8 +133,8 @@ relative_performance <- benchmarks |>
 ## Median Download Speed
 
 ```{r fig.cap='Median download speed for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
-ggplot(benchmarks, aes(col = experiment_type, fill = experiment_type, group = experiment_type)) +
-  geom_ribbon(aes(ymin = p25_speed, ymax = p75_speed, x = network_size, fill = experiment_type, alpha = 0.5), col = 'lightgray') +
+ggplot(benchmarks, aes(col = label, fill = label, group = label)) +
+  geom_ribbon(aes(ymin = p25_speed, ymax = p75_speed, x = network_size, fill = label, alpha = 0.5), col = 'lightgray') +
   geom_point(aes(x = network_size, y = p25_speed), col = 'darkgray', size=10.0, shape='-') +
   geom_point(aes(x = network_size, y = p75_speed), col = 'darkgray', size=10.0, shape='-') +
   geom_line(aes(x = network_size, y = median_speed)) +
@@ -151,7 +150,7 @@ ggplot(benchmarks, aes(col = experiment_type, fill = experiment_type, group = ex
         paste0("seeder ratio: ", scales::percent(as.numeric(x)))
       }))
   ) +
-  scale_color_discrete(name = '', labels = c('Codex', 'Deluge')) +
+  scale_color_discrete(name = '') +
   guides(fill = 'none', alpha = 'none')
 ```
 
@@ -159,7 +158,7 @@ ggplot(benchmarks, aes(col = experiment_type, fill = experiment_type, group = ex
 
 
 ```{r fig.cap='Median time to download a whole file for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
-ggplot(benchmarks, aes(col = experiment_type, fill = experiment_type, group = experiment_type)) +
+ggplot(benchmarks, aes(col = label, fill = label, group = label)) +
   geom_ribbon(aes(ymin = p25, ymax = p75, x = network_size, fill = experiment_type, alpha = 0.5), col = 'lightgray') +
   geom_point(aes(x = network_size, y = p25), col = 'darkgray', size=10.0, shape='-') +
   geom_point(aes(x = network_size, y = p75), col = 'darkgray', size=10.0, shape='-') +
@@ -177,7 +176,7 @@ ggplot(benchmarks, aes(col = experiment_type, fill = experiment_type, group = ex
         paste0("seeder ratio: ", scales::percent(as.numeric(x)))
       }))
   ) +
-  scale_color_discrete(name = '', labels = c('Codex', 'Deluge')) +
+  scale_color_discrete(name = '') +
   guides(fill = 'none', alpha = 'none')
 ```
 

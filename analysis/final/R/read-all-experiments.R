@@ -1,9 +1,9 @@
-read_all_experiments <- function(base_path, skip_incomplete = TRUE, prefix = '') {
+read_all_experiments <- function(base_path, skip_incomplete = TRUE, label = '') {
   roots <- list.files(base_path,
                       include.dirs = TRUE, no.. = TRUE, full.names = TRUE)
 
   experiments <- lapply(roots, read_single_experiment)
-  names(experiments) <- paste0(prefix, sapply(roots, basename))
+  names(experiments) <- paste0(label, '.', sapply(roots, basename))
 
   # Validates that no experiment has missing data.
   key_sets <- lapply(experiments, ls) |> unique()
@@ -17,6 +17,7 @@ read_all_experiments <- function(base_path, skip_incomplete = TRUE, prefix = '')
                           'some keys and will be discarded.'))
       NULL
     } else {
+      experiment$label <- label
       experiment
     }
   })
