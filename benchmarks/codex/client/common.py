@@ -12,7 +12,6 @@ class Manifest(BaseModel):
     blockSize: int
     filename: str
     mimetype: str
-    protected: bool
 
     @staticmethod
     def from_codex_api_response(response: dict) -> "Manifest":

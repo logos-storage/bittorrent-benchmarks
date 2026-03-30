@@ -25,12 +25,12 @@ services:
     image: ${COMPOSE_CODEX_IMAGE:-logosstorage/logos-storage-nim:latest}
     container_name: codex-1
     environment:
-      - CODEX_LOG_LEVEL=DEBUG
-      - CODEX_DATA_DIR=/var/lib/codex
-      - CODEX_DISC_PORT=6890
-      - CODEX_API_BINDADDR=0.0.0.0
-      - CODEX_API_PORT=6891
-      - CODEX_STORAGE_QUOTA=1073741824 # 1GB
+      - STORAGE_LOG_LEVEL=DEBUG
+      - STORAGE_DATA_DIR=/var/lib/codex
+      - STORAGE_DISC_PORT=6890
+      - STORAGE_API_BINDADDR=0.0.0.0
+      - STORAGE_API_PORT=6891
+      - STORAGE_STORAGE_QUOTA=1073741824 # 1GB
       - NAT_IP_AUTO=true
     volumes:
       - codex-volume-1:/var/lib/codex
@@ -52,12 +52,12 @@ services:
     image: ${COMPOSE_CODEX_IMAGE:-logosstorage/logos-storage-nim:latest}
     container_name: codex-2
     environment:
-      - CODEX_LOG_LEVEL=DEBUG
-      - CODEX_DATA_DIR=/var/lib/codex
-      - CODEX_DISC_PORT=6892
-      - CODEX_API_BINDADDR=0.0.0.0
-      - CODEX_API_PORT=6893
-      - CODEX_STORAGE_QUOTA=1073741824 # 1GB
+      - STORAGE_LOG_LEVEL=DEBUG
+      - STORAGE_DATA_DIR=/var/lib/codex
+      - STORAGE_DISC_PORT=6892
+      - STORAGE_API_BINDADDR=0.0.0.0
+      - STORAGE_API_PORT=6893
+      - STORAGE_STORAGE_QUOTA=1073741824 # 1GB
       - BOOTSTRAP_NODE_URL=http://codex-1:6891
       - NAT_IP_AUTO=true
     volumes:
@@ -80,12 +80,12 @@ services:
     image: ${COMPOSE_CODEX_IMAGE:-logosstorage/logos-storage-nim:latest}
     container_name: codex-3
     environment:
-      - CODEX_LOG_LEVEL=DEBUG
-      - CODEX_DATA_DIR=/var/lib/codex
-      - CODEX_DISC_PORT=6894
-      - CODEX_API_BINDADDR=0.0.0.0
-      - CODEX_API_PORT=6895
-      - CODEX_STORAGE_QUOTA=1073741824 # 1GB
+      - STORAGE_LOG_LEVEL=DEBUG
+      - STORAGE_DATA_DIR=/var/lib/codex
+      - STORAGE_DISC_PORT=6894
+      - STORAGE_API_BINDADDR=0.0.0.0
+      - STORAGE_API_PORT=6895
+      - STORAGE_STORAGE_QUOTA=1073741824 # 1GB
       - BOOTSTRAP_NODE_URL=http://codex-1:6891
       - NAT_IP_AUTO=true
     volumes:

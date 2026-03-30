@@ -34,7 +34,6 @@ class FakeCodex(AsyncCodexClient):
             blockSize=1,
             filename=name,
             treeCid="",
-            protected=False,
         )
         return cid
 

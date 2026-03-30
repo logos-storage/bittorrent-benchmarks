@@ -63,23 +63,23 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: CODEX_NAT
+            - name: STORAGE_NAT
               value: "none"
-            - name: CODEX_BLOCK_TTL
+            - name: STORAGE_BLOCK_TTL
               value: {{ .Values.experiment.blockTTL | quote }}
-            - name: CODEX_BLOCK_MI
+            - name: STORAGE_BLOCK_MI
               value: {{ .Values.experiment.blockMaintenanceInterval | quote }}
-            - name: CODEX_DISC_PORT
+            - name: STORAGE_DISC_PORT
               value: "6890"
-            - name: CODEX_API_PORT
+            - name: STORAGE_API_PORT
               value: "6891"
-            - name: CODEX_API_BINDADDR
+            - name: STORAGE_API_BINDADDR
               value: "0.0.0.0"
-            - name: CODEX_STORAGE_QUOTA
+            - name: STORAGE_STORAGE_QUOTA
               value: {{ include "codex.quota" . | quote }}
-            - name: CODEX_DATA_DIR
+            - name: STORAGE_DATA_DIR
               value: "/var/lib/codex"
-            - name: CODEX_LOG_LEVEL
+            - name: STORAGE_LOG_LEVEL
               value: {{ .Values.experiment.codexLogLevel }}
             - name: BOOTSTRAP_NODE
               value: "{{ include "codex-nodes.statefulset" . }}-{{ .Values.experiment.networkSize }}"
@@ -90,7 +90,7 @@ spec:
               echo "Pod name is: ${POD_NAME}"
               echo "Bootstrap node is: ${BOOTSTRAP_NODE}"
               echo "Pod IP is: ${POD_IP}"
-              echo "Log level is: ${CODEX_LOG_LEVEL}"
+              echo "Log level is: ${STORAGE_LOG_LEVEL}"
 
               if [ "${POD_NAME}" != "${BOOTSTRAP_NODE}" ]; then
                 export BOOTSTRAP_NODE_URL="http://${BOOTSTRAP_NODE}.{{include "codex-nodes.service" .}}.{{ .Release.Namespace }}.svc.cluster.local:6891"
@@ -99,8 +99,8 @@ spec:
                 echo "This is the boostrap node."
               fi
 
-              export CODEX_LISTEN_ADDRS="/ip4/${POD_IP}/tcp/6892"
-              rm -rf ${CODEX_DATA_DIR}/*
+              export STORAGE_LISTEN_ADDRS="/ip4/${POD_IP}/tcp/6892"
+              rm -rf ${STORAGE_DATA_DIR}/*
 
               echo " -- Starting Codex node -- "
               echo "Running Docker entrypoint..."
