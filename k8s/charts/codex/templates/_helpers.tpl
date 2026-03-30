@@ -78,7 +78,7 @@ cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
 {{- end -}}
 
 {{- define "codex.image" -}}
-{{ .Values.deployment.minikubeEnv | ternary "nim-codex:minikube" (printf "codexstorage/nim-codex:%s" .Values.deployment.nodeTag) }}
+{{ .Values.deployment.minikubeEnv | ternary "logos-storage-nim:minikube" (printf "logosstorage/logos-storage-nim:%s" .Values.deployment.nodeTag) }}
 {{- end -}}
 
 {{- define "benchmark.harness.imagePullPolicy" -}}

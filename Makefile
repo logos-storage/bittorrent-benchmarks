@@ -49,7 +49,7 @@ codex-image-minikube:
 	fi
 	eval $$(minikube docker-env) && \
 	cd ${CODEX_REPO_PATH} && \
-	docker build -t nim-codex:minikube -f ./docker/codex.Dockerfile .
+	docker build -t logos-storage-nim:minikube -f ./docker/codex.Dockerfile .
 
 harness-image-minikube:
 	eval $$(minikube docker-env) && \

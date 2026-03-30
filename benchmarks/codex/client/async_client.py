@@ -51,7 +51,7 @@ class AsyncCodexClientImpl(AsyncCodexClient):
     ) -> Cid:
         async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
             response = await session.post(
-                self.codex_api_url._replace(path="/api/codex/v1/data").url,
+                self.codex_api_url._replace(path="/api/storage/v1/data").url,
                 headers={
                     aiohttp.hdrs.CONTENT_TYPE: mime_type,
                     aiohttp.hdrs.CONTENT_DISPOSITION: f'attachment; filename="{name}"',
@@ -68,7 +68,7 @@ class AsyncCodexClientImpl(AsyncCodexClient):
         async with aiohttp.ClientSession() as session:
             response = await session.get(
                 self.codex_api_url._replace(
-                    path=f"/api/codex/v1/data/{cid}/network/manifest"
+                    path=f"/api/storage/v1/data/{cid}/network/manifest"
                 ).url,
             )
 
@@ -83,7 +83,7 @@ class AsyncCodexClientImpl(AsyncCodexClient):
     ) -> AsyncIterator[BaseStreamReader]:
         async with aiohttp.ClientSession(timeout=ClientTimeout()) as session:
             response = await session.get(
-                self.codex_api_url._replace(path=f"/api/codex/v1/data/{cid}").url,
+                self.codex_api_url._replace(path=f"/api/storage/v1/data/{cid}").url,
                 timeout=timeout,
             )
 

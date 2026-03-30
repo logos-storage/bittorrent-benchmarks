@@ -58,7 +58,7 @@ async def fake_codex_api() -> AsyncIterator[Tuple[FakeCodex, Url]]:
     codex = FakeCodex()
     routes = web.RouteTableDef()
 
-    @routes.get("/api/codex/v1/data/{cid}/network/manifest")
+    @routes.get("/api/storage/v1/data/{cid}/network/manifest")
     async def manifest(request):
         cid = request.match_info["cid"]
         assert cid in codex.storage
@@ -71,7 +71,7 @@ async def fake_codex_api() -> AsyncIterator[Tuple[FakeCodex, Url]]:
             }
         )
 
-    @routes.post("/api/codex/v1/data")
+    @routes.post("/api/storage/v1/data")
     async def upload(request):
         await request.post()
         filename = re.findall(
@@ -84,7 +84,7 @@ async def fake_codex_api() -> AsyncIterator[Tuple[FakeCodex, Url]]:
         )
         return web.Response(text=cid)
 
-    @routes.get("/api/codex/v1/data/{cid}")
+    @routes.get("/api/storage/v1/data/{cid}")
     async def download(request):
         cid = request.match_info["cid"]
         assert cid in codex.streams

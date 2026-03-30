@@ -104,7 +104,7 @@ spec:
 
               echo " -- Starting Codex node -- "
               echo "Running Docker entrypoint..."
-              /docker-entrypoint.sh codex
+              /docker-entrypoint.sh storage
           volumeMounts:
             - name: codex-node-storage
               mountPath: /var/lib/codex

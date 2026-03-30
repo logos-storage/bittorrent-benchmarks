@@ -47,7 +47,7 @@ class CodexNode(Node[Cid, CodexMeta], ExperimentComponent):
     def is_ready(self) -> bool:
         try:
             requests.get(
-                str(self.codex_api_url._replace(path="/api/codex/v1/debug/info"))
+                str(self.codex_api_url._replace(path="/api/storage/v1/debug/info"))
             )
             return True
         except (ConnectionError, socket.gaierror):
@@ -75,7 +75,7 @@ class CodexNode(Node[Cid, CodexMeta], ExperimentComponent):
     def remove(self, handle: Cid) -> bool:
         if self.remove_data:
             response = requests.delete(
-                str(self.codex_api_url._replace(path=f"/api/codex/v1/data/{handle}")),
+                str(self.codex_api_url._replace(path=f"/api/storage/v1/data/{handle}")),
                 timeout=DELETE_TIMEOUT,
             )
 
@@ -86,7 +86,7 @@ class CodexNode(Node[Cid, CodexMeta], ExperimentComponent):
     def exists_local(self, handle: Cid) -> bool:
         """Check if a dataset exists on the node."""
         response = requests.get(
-            str(self.codex_api_url._replace(path=f"/api/codex/v1/data/{handle}"))
+            str(self.codex_api_url._replace(path=f"/api/storage/v1/data/{handle}"))
         )
 
         response.close()
@@ -105,7 +105,7 @@ class CodexNode(Node[Cid, CodexMeta], ExperimentComponent):
         """Retrieves the contents of a locally available
         dataset from the node."""
         response = requests.get(
-            str(self.codex_api_url._replace(path=f"/api/codex/v1/data/{handle}"))
+            str(self.codex_api_url._replace(path=f"/api/storage/v1/data/{handle}"))
         )
 
         response.raise_for_status()
