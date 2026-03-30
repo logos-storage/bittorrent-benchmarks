@@ -75,7 +75,7 @@ jobs:
   build-and-push:
     name: Build and Push
     needs: variables
-    uses: codex-storage/github-actions/.github/workflows/docker-reusable.yml@master
+    uses: logos-storage/github-actions/.github/workflows/docker-reusable.yml@master
     with:
       docker_file: ${{ needs.variables.outputs.docker_file }}
       dockerhub_repo: ${{ needs.variables.outputs.dockerhub_repo }}
