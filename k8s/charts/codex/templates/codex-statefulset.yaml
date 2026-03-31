@@ -64,7 +64,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: STORAGE_NAT
-              value: "none"
+              value: "extip:$(POD_IP)"
             - name: STORAGE_BLOCK_TTL
               value: {{ .Values.experiment.blockTTL | quote }}
             - name: STORAGE_BLOCK_MI
