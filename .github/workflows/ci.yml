@@ -10,7 +10,7 @@ on:
 
 env:
   DOCKER_FILE: ./docker/bittorrent-benchmarks.Dockerfile
-  DOCKER_REPO: logosstorage/bittorrent-benchmarks
+  DOCKER_REPO: codexstorage/bittorrent-benchmarks
   BUILD_ARGS: |
     BUILD_TYPE=test
 
