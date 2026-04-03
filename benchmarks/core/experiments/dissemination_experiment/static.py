@@ -32,6 +32,7 @@ class StaticDisseminationExperiment(
         seed: int,
         concurrency: Optional[int] = None,
         logging_cooldown: int = 0,
+        stagger_delay: float = 0,
         experiment_id: Optional[str] = None,
     ) -> None:
         self.nodes = network
@@ -48,6 +49,7 @@ class StaticDisseminationExperiment(
         )
         self._cid: Optional[TNetworkHandle] = None
         self.logging_cooldown = logging_cooldown
+        self.stagger_delay = stagger_delay
 
     def experiment_id(self) -> Optional[str]:
         return self._experiment_id
@@ -77,14 +79,19 @@ class StaticDisseminationExperiment(
                 f"Setting up leechers: {[str(leecher) for leecher in leechers]}"
             )
 
-            def _leech(leecher):
+            def _leech(leecher, delay):
+                if delay > 0:
+                    sleep(delay)
                 _log_request(leecher, "leech", str(self.meta), EventBoundary.start)
                 download = leecher.leech(self._cid)
                 _log_request(leecher, "leech", str(self.meta), EventBoundary.end)
                 return download
 
             downloads = ensure_successful(
-                [self._executor.submit(_leech, leecher) for leecher in leechers]
+                [
+                    self._executor.submit(_leech, leecher, i * self.stagger_delay)
+                    for i, leecher in enumerate(leechers)
+                ]
             )
 
         with experiment_stage(self, "downloading"):

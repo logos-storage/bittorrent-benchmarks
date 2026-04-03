@@ -32,6 +32,12 @@ class DisseminationExperimentConfig(ConfigModel, Generic[TNodeConfig, TNodeSetCo
         description="Time to wait after the last download completes before tearing down the experiment.",
     )
 
+    stagger_delay: float = Field(
+        ge=0,
+        default=0,
+        description="Delay in seconds between starting each leecher (0 = simultaneous).",
+    )
+
     @computed_field  # type: ignore
     @property
     def experiment_type(self) -> str:

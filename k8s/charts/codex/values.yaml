@@ -25,6 +25,9 @@ experiment:
   # than deleting it, but requires more space.
   removeData: true
 
+  # Delay in seconds between starting each leecher (0 = simultaneous).
+  staggerDelay: 0
+
 deployment:
   appName: ""
 

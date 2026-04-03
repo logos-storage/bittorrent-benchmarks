@@ -9,6 +9,7 @@ codex_experiment:
   remove_data: ${REMOVE_DATA}
   # No need for cooldown as Codex takes forever to remove files, so there's plenty of time to log stuff. :-)
   logging_cooldown: 0
+  stagger_delay: ${STAGGER_DELAY}
 
   nodes:
     network_size: ${NETWORK_SIZE}

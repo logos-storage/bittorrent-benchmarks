@@ -114,6 +114,7 @@ class CodexExperimentConfig(
                             seed=random.randint(0, 2**16),
                             meta=CodexMeta(f"dataset-{seeder_set}-{experiment_run}"),
                             logging_cooldown=self.logging_cooldown,
+                            stagger_delay=self.stagger_delay,
                         )
                     )
 

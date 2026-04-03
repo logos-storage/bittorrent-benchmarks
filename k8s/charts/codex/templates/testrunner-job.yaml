@@ -50,6 +50,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: STAGGER_DELAY
+              value: {{ .Values.experiment.staggerDelay | quote }}
 
           resources:
             requests:
