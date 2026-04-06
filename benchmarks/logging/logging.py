@@ -249,6 +249,10 @@ class DownloadMetric(Metric):
     dataset_name: str
 
 
+class BlocksServedMetric(Metric):
+    name: str = "blocks_served"
+
+
 class EventBoundary(Enum):
     start = "start"
     end = "end"
@@ -279,6 +283,7 @@ def basic_log_parser() -> LogParser:
     parser.register(NodeEvent)
     parser.register(Metric)
     parser.register(DownloadMetric)
+    parser.register(BlocksServedMetric)
     parser.register(RequestEvent)
     parser.register(ExperimentStatus)
     parser.register(ExperimentStage)

@@ -112,6 +112,19 @@ class CodexNode(Node[Cid, CodexMeta], ExperimentComponent):
 
         return response.iter_content(chunk_size=chunk_size)
 
+    def blocks_sent(self, metrics_port: int = 8008) -> int:
+        """Query the Prometheus metrics endpoint for blocks sent count."""
+        try:
+            metrics_url = self.codex_api_url._replace(port=metrics_port, path="/metrics")
+            response = requests.get(str(metrics_url), timeout=5)
+            response.raise_for_status()
+            for line in response.text.splitlines():
+                if line.startswith("storage_block_exchange_blocks_sent_total"):
+                    return int(float(line.split()[1]))
+        except Exception:
+            pass
+        return 0
+
     def wipe_all_datasets(self):
         for dataset in list(self.hosted_datasets):
             self.remove(dataset)

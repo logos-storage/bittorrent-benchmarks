@@ -15,7 +15,7 @@ from benchmarks.core.network import (
     Node,
     DownloadHandle,
 )
-from benchmarks.logging.logging import RequestEvent, EventBoundary
+from benchmarks.logging.logging import RequestEvent, EventBoundary, BlocksServedMetric
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +118,16 @@ class StaticDisseminationExperiment(
                     for i, download in enumerate(downloads)
                 ]
             )
+
+        with experiment_stage(self, "blocks_served"):
+            for i, node in enumerate(self.nodes):
+                if hasattr(node, "blocks_sent"):
+                    logger.info(
+                        BlocksServedMetric(
+                            node=node.name,
+                            value=node.blocks_sent(),
+                        )
+                    )
 
         with experiment_stage(self, "log_cooldown"):
             # FIXME this is a hack to ensure that nodes get a chance to log their data before we

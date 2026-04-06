@@ -65,6 +65,12 @@ spec:
                   fieldPath: metadata.name
             - name: STORAGE_NAT
               value: "none"
+            - name: STORAGE_METRICS
+              value: "true"
+            - name: STORAGE_METRICS_ADDRESS
+              value: "0.0.0.0"
+            - name: STORAGE_METRICS_PORT
+              value: "8008"
             - name: STORAGE_BLOCK_TTL
               value: {{ .Values.experiment.blockTTL | quote }}
             - name: STORAGE_BLOCK_MI
