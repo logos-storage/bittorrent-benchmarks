@@ -64,7 +64,7 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: STORAGE_NAT
-              value: "extip:$(POD_IP)"
+              value: "none"
             - name: STORAGE_BLOCK_TTL
               value: {{ .Values.experiment.blockTTL | quote }}
             - name: STORAGE_BLOCK_MI
@@ -99,7 +99,9 @@ spec:
                 echo "This is the boostrap node."
               fi
 
-              export STORAGE_LISTEN_ADDRS="/ip4/${POD_IP}/tcp/6892"
+              export STORAGE_LISTEN_IP="${POD_IP}"
+              export STORAGE_LISTEN_PORT="6892"
+              export STORAGE_NAT=none
               rm -rf ${STORAGE_DATA_DIR}/*
 
               echo " -- Starting Codex node -- "
