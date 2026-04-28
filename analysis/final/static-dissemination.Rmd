@@ -4,18 +4,17 @@ output:
   bookdown::html_notebook2:
     number_sections: TRUE
     toc: TRUE
-date: "2025-01-15"
+date: "2026-04-28"
 ---
 
 # Introduction
 
 This document contains the analysis for the Deluge vs. Logos Storage benchmarks. All data is obtained from our [benchmark suite](https://github.com/logos-storage/bittorrent-benchmarks/).
-Each node runs in its own virtual machine, a [CPX31](https://www.hetzner.com/cloud) standard Hetzner virtual machine with $4$ shared vCPUs and $8\text{GB}$ of RAM. [iperf3](https://iperf.fr/) measurements conducted across nodes puts inter-node networking bandwidth at about $4.3\text{Gbps}$.
+Each node runs in its own virtual machine. The exact configuration for the machines has varied over time, but those are typically $4$vCPU, $8$ or $16$GB machines running either on Hetzner or Digital Ocean.
 
 The benchmark consists in running a series of _static dissemination experiments_, where a file of size $b$ is disseminated across a swarm (set of nodes) of size $n$. Each swarm is split into a seeder set of size $s$ and a leecher (or downloader) set of size $l = n - s$. Seeders have the complete file at the start of the experiment, whereas leechers have nothing. The experiment consists in starting the leechers and then measuring the time it takes for each to download the file.
 
-Leechers are started as closely as possible to each other so that they start downloading the file roughly at the same time. This stresses the network and, under these conditions,
- should provide us with a reasonable idea of what the lower bound on performance should be.
+Leechers are started as closely as possible to each other so that they start downloading the file roughly at the same time. This stresses the network and, under these conditions, should provide us with a reasonable idea of what the lower bound on performance should be.
 
 For a given network configuration $(n, s, l = n - s)$, we define it's seeder ratio as $r = s / n$. A higher seeder ratio should lead to faster dissemination, but if the swarms are homogeneous and scalable, the impact should not be large. We also expect close-to-constant performance for a given seeder ratio after for large enough swarms. Deviations from such behavior are likely issues.
 
@@ -87,7 +86,6 @@ benchmarks <- lapply(experiments, function(experiment) {
   ) |>
   relocate(file_size, network_size, seeders, leechers, file_size_bytes)
 ```
-
 # Results
 
 ```{r echo = FALSE}
@@ -135,19 +133,6 @@ comparison_plot(
 ) + Y_BPS
 ```
 
-## Median Transfer Speed
-
-```{r fig.width = 11, message = FALSE, echo = FALSE}
-comparison_plot(
-  benchmarks,
-  transfer_p25_speed,
-  transfer_p75_speed,
-  transfer_median_speed,
-  ylab = 'median transfer speed (bytes/second)',
-  free_y = TRUE
-) + Y_BPS
-```
-
 ## Median Download Time
 
 ```{r fig.cap='Median time to download a whole file for Deluge and Logos Storage', fig.width = 11, message = FALSE, echo = FALSE}
@@ -163,7 +148,7 @@ comparison_plot(
 
 ## Median Time to First Byte
 
-The time elapsed from the moment in which we ask a node to download a file to the time in which it logs having downloaded the first $x\%$ of the file -- whatever the logging granularity is -- marks our time to first byte. This is actually an approximation which factors in _i)_ DHT lookup latency; _ii)_ swarm bootstrap latency; _iii)_ a fraction, typically $1/100^{th}$, of the download time. This should impact smaller files more than it impacts larger files.
+The time elapsed from the moment in which we ask a node to download a file to the time in which it logs having downloaded the first $x\%$ of the file -- whatever the logging granularity is -- marks our time to first byte. This is actually a pessimistic approximation as it factors in _i)_ DHT lookup latency; _ii)_ swarm bootstrap latency; _iii)_ a fraction, typically $1/100^{th}$, of the download time. This should impact smaller files more than it impacts larger files.
 
 ```{r fig.cap='Median time-to-first-byte for Deluge and Logos Storage', fig.width = 11, message = FALSE, echo = FALSE}
 comparison_plot(
@@ -171,9 +156,24 @@ comparison_plot(
   first_byte_p25,
   first_byte_p75,
   first_byte_median,
-  ylab = 'median download time',
+  ylab = 'median time-to-first-byte',
   free_y = TRUE
 ) + Y_TIMESPAN
+```
+
+## Median Transfer Speed
+
+"Transfer" speed is download speed calculated excluding the time-to-first-byte. Since the time-to-first-byte approximation is pessimistic, the transfer speed is optimistic. It is still useful as a proxy for actual relative transfer speed, however, particularly for larger files.
+
+```{r fig.width = 11, message = FALSE, echo = FALSE}
+comparison_plot(
+  benchmarks,
+  transfer_p25_speed,
+  transfer_p75_speed,
+  transfer_median_speed,
+  ylab = 'median transfer speed (bytes/second)',
+  free_y = TRUE
+) + Y_BPS
 ```
 
 ## Median Download Time Ratio
@@ -181,12 +181,13 @@ comparison_plot(
 Let $t_d$ and $t_c$ be the median times that Deluge and Logos Storage, respectively, take to download some file of a given size. The median download time ratio is defined as $m = t_c / t_d$.
 When $m < 1$, Logos Storage is faster than Deluge. It is otherwise $m$ times slower to download the same file.
 
-```{r fig.cap='Median downlaod time ratio for Logos Storage and Deluge', fig.width = 11, message = FALSE, echo = FALSE}
+```{r fig.cap='Median download time ratio for Logos Storage and Deluge', fig.width = 11, message = FALSE, echo = FALSE}
 ggplot(relative_performance, aes(col = label, group = label)) +
   geom_line(aes(x = network_size, y = relative_median, col = label), lwd=1) +
   geom_hline(yintercept = 1, linetype = 'dashed', col = 'darkgray') +
   geom_point(aes(x = network_size, y = relative_median, col = label)) +
   ylab('median speedup/slowdown over Deluge') +
+  xlab('network size') +
   annotate('text', label = 'faster', x = 29, y = 0, col = 'darkgreen') +
   annotate('text', label = 'slower', x = 28.5, y = 2, col = 'darkred') +
   theme_minimal(base_size=15) +

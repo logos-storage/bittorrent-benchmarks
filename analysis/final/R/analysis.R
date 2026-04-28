@@ -103,7 +103,7 @@ compute_download_times <- function(meta, request_event, download_metric, group_i
       # "Transfer" time is the total download time minus the lookup time. Again,
       # this is approximated, and likely reflects a shorter download time than
       # the real download time.
-      transfer = as.numeric(max(timestamp) - first_byte_t)
+      transfer = as.numeric(timestamp - first_byte_t)
     ) |>
     ungroup()
 
