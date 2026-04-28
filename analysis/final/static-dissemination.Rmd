@@ -31,9 +31,10 @@ devtools::load_all()
 ```
 
 ```{r message = FALSE, include = !knitr::is_html_output()}
-experiments <- read_all_experiments('./data/devnet/optimized/g1761924045/', label = 'deluge') |>
-  merge_experiments(read_all_experiments('./data/devnet/optimized/g1762505060/', label ='codex-baseline')) |>
-  merge_experiments(read_all_experiments('./data/devnet/optimized/g1761729711/', label = 'codex-optimized'))
+experiments <- read_all_experiments('./data/do/g1761924045/', label = 'deluge') |>
+  merge_experiments(read_all_experiments('./data/do/g1762505060/', label = 'codex-baseline')) |>
+  merge_experiments(read_all_experiments('./data/do/g1761729711/', label = 'codex-optimized')) |>
+  merge_experiments(read_all_experiments('./data/do/g1775565300/', label = 'new-protocol'))
 ```
 
 ```{r include = !knitr::is_html_output()}
@@ -45,7 +46,7 @@ COUNT_DISTINCT = list(
 
 ```{r message = FALSE, include = !knitr::is_html_output()}
 benchmarks <- lapply(experiments, function(experiment) {
-  print(glue::glue('Process {experiment$experiment_id}'))
+  print(glue::glue('Process {experiment$experiment_id} - {experiment$label}'))
   download_time_stats <- tryCatch({
     meta <- experiment$meta
     completion <- experiment |>
@@ -77,9 +78,12 @@ benchmarks <- lapply(experiments, function(experiment) {
                         levels = rlang::parse_bytes(as.character(
                           unique(file_size[order(file_size, decreasing = TRUE)])))),
     seeder_ratio = seeders / network_size,
-    median_speed = file_size_bytes / median,
-    p25_speed = file_size_bytes / p25,
-    p75_speed = file_size_bytes / p75
+    completion_median_speed = file_size_bytes / completion_median,
+    completion_p25_speed = file_size_bytes / completion_p25,
+    completion_p75_speed = file_size_bytes / completion_p75,
+    transfer_median_speed = file_size_bytes / transfer_median,
+    transfer_p25_speed = file_size_bytes / transfer_p25,
+    transfer_p75_speed = file_size_bytes / transfer_p75
   ) |>
   relocate(file_size, network_size, seeders, leechers, file_size_bytes)
 ```
@@ -114,58 +118,62 @@ DT::datatable(
 relative_performance <- compute_speedups(
   benchmarks = benchmarks,
   base = 'deluge',
-  compare = c('codex-baseline', 'codex-optimized')
+  compare = c('codex-baseline', 'codex-optimized', 'new-protocol')
 )
 ```
 
 ## Median Download Speed
 
 ```{r fig.cap='Median download speed for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
-ggplot(benchmarks, aes(col = label, fill = label, group = label)) +
-  geom_ribbon(aes(ymin = p25_speed, ymax = p75_speed, x = network_size, fill = label, alpha = 0.5), col = 'lightgray') +
-  geom_point(aes(x = network_size, y = p25_speed), col = 'darkgray', size=10.0, shape='-') +
-  geom_point(aes(x = network_size, y = p75_speed), col = 'darkgray', size=10.0, shape='-') +
-  geom_line(aes(x = network_size, y = median_speed)) +
-  geom_point(aes(x = network_size, y = median_speed)) +
-  ylab('median download speed (bytes/second)') +
-  xlab('network size') +
-  theme_minimal(base_size=15) +
-  scale_y_continuous(labels = function(x) paste0(scales::label_bytes()(x), '/s')) +
-  facet_grid(
-    file_size ~ seeder_ratio,
-    labeller = labeller(
-      seeder_ratio = as_labeller(function(x) {
-        paste0("seeder ratio: ", scales::percent(as.numeric(x)))
-      }))
-  ) +
-  scale_color_discrete(name = '') +
-  guides(fill = 'none', alpha = 'none')
+comparison_plot(
+  benchmarks,
+  completion_p25_speed,
+  completion_p75_speed,
+  completion_median_speed,
+  ylab = 'median download speed (bytes/second)',
+  free_y = TRUE
+) + Y_BPS
+```
+
+## Median Transfer Speed
+
+```{r fig.width = 11, message = FALSE, echo = FALSE}
+comparison_plot(
+  benchmarks,
+  transfer_p25_speed,
+  transfer_p75_speed,
+  transfer_median_speed,
+  ylab = 'median transfer speed (bytes/second)',
+  free_y = TRUE
+) + Y_BPS
 ```
 
 ## Median Download Time
 
-
 ```{r fig.cap='Median time to download a whole file for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
-ggplot(benchmarks, aes(col = label, fill = label, group = label)) +
-  geom_ribbon(aes(ymin = p25, ymax = p75, x = network_size, fill = experiment_type, alpha = 0.5), col = 'lightgray') +
-  geom_point(aes(x = network_size, y = p25), col = 'darkgray', size=10.0, shape='-') +
-  geom_point(aes(x = network_size, y = p75), col = 'darkgray', size=10.0, shape='-') +
-  geom_line(aes(x = network_size, y = median)) +
-  geom_point(aes(x = network_size, y = median)) +
-  ylab('median download time') +
-  xlab('network size') +
-  theme_minimal(base_size = 15) +
-  scale_y_continuous(labels = scales::label_timespan()) +
-  facet_grid(
-    scales = 'free_y',
-    file_size ~ seeder_ratio,
-    labeller = labeller(
-      seeder_ratio = as_labeller(function(x) {
-        paste0("seeder ratio: ", scales::percent(as.numeric(x)))
-      }))
-  ) +
-  scale_color_discrete(name = '') +
-  guides(fill = 'none', alpha = 'none')
+comparison_plot(
+  benchmarks,
+  completion_p25,
+  completion_p75,
+  completion_median,
+  ylab = 'median download time',
+  free_y = TRUE
+) + Y_TIMESPAN
+```
+
+## Median Time to First Byte
+
+The time elapsed from the moment in which we ask a node to download a file to the time in which it logs having downloaded the first $x\%$ of the file -- whatever the logging granularity is -- marks our time to first byte. This is actually an approximation which factors in _i)_ DHT lookup latency; _ii)_ swarm bootstrap latency; _iii)_ a fraction, typically $1/100^{th}$, of the download time. This should impact smaller files more than it impacts larger files.
+
+```{r fig.cap='Median time-to-first-byte for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
+comparison_plot(
+  benchmarks,
+  first_byte_p25,
+  first_byte_p75,
+  first_byte_median,
+  ylab = 'median download time',
+  free_y = TRUE
+) + Y_TIMESPAN
 ```
 
 ## Median Download Time Ratio

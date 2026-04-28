@@ -94,13 +94,21 @@ compute_download_times <- function(meta, request_event, download_metric, group_i
     ) |>
     group_by(node, run, seed_set) |>
     mutate(
-      time_to_first_byte = min(timestamp),
-      lookup_time = as.numeric(time_to_first_byte - seed_request_time)
+      # The time elapsed between the instant we start the download and the time
+      # we see the first log entry is approximated as "time to first byte".
+      # In reality, this factors lookup time, swarm bootstrap time, and
+      # part of the download itself.
+      first_byte_t = min(timestamp),
+      first_byte = as.numeric(first_byte_t - seed_request_time),
+      # "Transfer" time is the total download time minus the lookup time. Again,
+      # this is approximated, and likely reflects a shorter download time than
+      # the real download time.
+      transfer = as.numeric(max(timestamp) - first_byte_t)
     ) |>
     ungroup()
 
   if (nrow(download_times |>
-           filter(elapsed_download_time < 0 | lookup_time < 0)) > 0) {
+           filter(elapsed_download_time < 0 | first_byte < 0 | transfer < 0)) > 0) {
     stop('Calculation for download times contains negative numbers')
   }
 
@@ -137,36 +145,49 @@ download_times <- function(experiment, piece_count_distinct, discard_incomplete 
 
 
 completion_time_stats <- function(download_times, meta) {
-  completion_times <- download_times |>
+  filtered <- download_times |>
     filter(!is.na(elapsed_download_time),
-           is_completed(completed)) |>
-    pull(elapsed_download_time)
+           is_completed(completed))
 
   n_experiments <- meta$repetitions * meta$seeder_sets
   n_leechers <- meta$nodes$network_size - meta$seeders
   n_points <- n_experiments * n_leechers
 
   tibble(
-    n = length(completion_times),
+    n = nrow(filtered),
     expected_n = n_points,
     missing = expected_n - n,
-    min = min(completion_times),
-    p05 = quantile(completion_times, p = 0.05),
-    p10 = quantile(completion_times, p = 0.10),
-    p20 = quantile(completion_times, p = 0.20),
-    p25 = quantile(completion_times, p = 0.25),
-    median = median(completion_times),
-    p75 = quantile(completion_times, p = 0.75),
-    p80 = quantile(completion_times, p = 0.80),
-    p90 = quantile(completion_times, p = 0.90),
-    p95 = quantile(completion_times, p = 0.95),
-    max = max(completion_times),
+    completion = distributional_stats(filtered$elapsed_download_time),
+    first_byte = distributional_stats(filtered$first_byte),
+    transfer = distributional_stats(filtered$transfer)
+  ) |>
+    unnest(
+      cols = c(completion, first_byte, transfer),
+      names_sep = '_'
+    )
+}
+
+distributional_stats <- function(x) {
+  n <- length(x)
+  tibble(
+    min = min(x),
+    p05 = quantile(x, p = 0.05),
+    p10 = quantile(x, p = 0.10),
+    p20 = quantile(x, p = 0.20),
+    p25 = quantile(x, p = 0.25),
+    median = median(x),
+    p75 = quantile(x, p = 0.75),
+    p80 = quantile(x, p = 0.80),
+    p90 = quantile(x, p = 0.90),
+    p95 = quantile(x, p = 0.95),
+    max = max(x),
     iqr = p75 - p25,
     # This gives us roughly a 95% ci for comparing medians.
     ci = (1.58 * iqr) / sqrt(n),
     w_top = median + ci,
     w_bottom = median - ci
   )
+
 }
 
 check_seeder_count <- function(download_times, seeders) {
@@ -212,13 +233,12 @@ compute_speedups <- function(benchmarks, baseline, compare) {
   baseline_data <- benchmarks |>
     filter(label == baseline) |>
     select(
-      experiment_type, label, network_size, seeders, leechers, file_size, median
+      experiment_type, label, network_size, seeders, leechers, file_size, completion_median
     ) |>
-    rename(baseline_median = median)
+    rename(baseline_median = completion_median)
 
 
   lapply(compare, function(compare_label) {
-    browser()
     benchmarks |>
       filter(label == compare_label) |>
       inner_join(
@@ -226,7 +246,7 @@ compute_speedups <- function(benchmarks, baseline, compare) {
         by = c('network_size', 'seeders', 'leechers', 'file_size')
       ) |>
       mutate(
-        relative_median = median / baseline_median
+        relative_median = completion_median / baseline_median
       ) |>
       mutate(label = label.x) |>
       select(-baseline_median, -label.y, -label.x)
