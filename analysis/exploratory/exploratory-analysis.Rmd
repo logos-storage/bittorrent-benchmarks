@@ -9,7 +9,7 @@ output:
 
 ## Goals
 
-The goal for this notebook is to provide a simple analysis for download time distributions over repeated runs of our [static dissemination experiment](https://github.com/codex-storage/bittorrent-benchmarks/blob/95651ad9d7e5ac4fb7050767cbac94ea75c8c07b/benchmarks/core/experiments/static_experiment.py#L22) over a _single parameter set_; i.e., a set of experiments for which:
+The goal for this notebook is to provide a simple analysis for download time distributions over repeated runs of our [static dissemination experiment](https://github.com/logos-storage/bittorrent-benchmarks/blob/95651ad9d7e5ac4fb7050767cbac94ea75c8c07b/benchmarks/core/experiments/static_experiment.py#L22) over a _single parameter set_; i.e., a set of experiments for which:
 
 * network size;
 * number of seeders;
@@ -26,7 +26,7 @@ library(jsonlite)
 ## Experiment Parameters
 
 ```{r}
-EXPERIMENT_ROOT <- 'data/codex/parsed'
+EXPERIMENT_ROOT <- '../final/data/do/g1775565300/e1'
 experiment_file <- function(filename) file.path(EXPERIMENT_ROOT, filename)
 ```
 
@@ -115,7 +115,7 @@ downloads |>
 
 ### Computing Download Times
 
-We define the _download time_ for a node $d$ as the time elapsed from the client's response to a [request to download a dataset](https://github.com/codex-storage/bittorrent-benchmarks/blob/95651ad9d7e5ac4fb7050767cbac94ea75c8c07b/benchmarks/core/network.py#L58) and the time at which the client reports having received the last piece of the downloaded file. The form of this request, as well as how the request is done, is client-specific, but typically involves an RPC or REST API call in one flavour or the other. Since seeders are already in possession of the file by construction, we only measure download times at _leechers_.
+We define the _download time_ for a node $d$ as the time elapsed from the client's response to a [request to download a dataset](https://github.com/logos-storage/bittorrent-benchmarks/blob/95651ad9d7e5ac4fb7050767cbac94ea75c8c07b/benchmarks/core/network.py#L58) and the time at which the client reports having received the last piece of the downloaded file. The form of this request, as well as how the request is done, is client-specific, but typically involves an RPC or REST API call in one flavour or the other. Since seeders are already in possession of the file by construction, we only measure download times at _leechers_.
 
 ```{r}
 download_requests <- read_csv(
@@ -126,7 +126,7 @@ download_requests <- read_csv(
 ```{r}
 download_start <- download_requests |> 
   select(-request_id) |>
-  filter(name == 'leech', type == 'RequestEventType.end') |> 
+  filter(name == 'leech', type == 'EventBoundary.start') |>
    mutate(
     # We didn't log those on the runner side so I have to reconstruct them.
     run = rep(rep(
@@ -183,6 +183,6 @@ ggplot(download_time_stats) +
   ylab("completion") +
   xlab("time (seconds)") +
   scale_y_continuous(labels = scales::percent) +
-  ggtitle(paste0('download time (Codex, ',rlang::as_bytes(experiment_meta$file_size),' file)'))
+  ggtitle(paste0('download time (Logos Storage, ',rlang::as_bytes(experiment_meta$file_size),' file)'))
 ```
 
