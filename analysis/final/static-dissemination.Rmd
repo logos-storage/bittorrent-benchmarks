@@ -1,5 +1,5 @@
 ---
-title: "Analysis for Codex vs. Deluge Benchmarks - Static Network Dissemination Experiment"
+title: "Analysis for Logos Storage vs. Deluge Benchmarks - Static Network Dissemination Experiment"
 output:
   bookdown::html_notebook2:
     number_sections: TRUE
@@ -9,7 +9,7 @@ date: "2025-01-15"
 
 # Introduction
 
-This document contains the analysis for the Deluge vs. Codex benchmarks. All data is obtained from our [benchmark suite](https://github.com/codex-storage/bittorrent-benchmarks/).
+This document contains the analysis for the Deluge vs. Logos Storage benchmarks. All data is obtained from our [benchmark suite](https://github.com/logos-storage/bittorrent-benchmarks/).
 Each node runs in its own virtual machine, a [CPX31](https://www.hetzner.com/cloud) standard Hetzner virtual machine with $4$ shared vCPUs and $8\text{GB}$ of RAM. [iperf3](https://iperf.fr/) measurements conducted across nodes puts inter-node networking bandwidth at about $4.3\text{Gbps}$.
 
 The benchmark consists in running a series of _static dissemination experiments_, where a file of size $b$ is disseminated across a swarm (set of nodes) of size $n$. Each swarm is split into a seeder set of size $s$ and a leecher (or downloader) set of size $l = n - s$. Seeders have the complete file at the start of the experiment, whereas leechers have nothing. The experiment consists in starting the leechers and then measuring the time it takes for each to download the file.
@@ -32,8 +32,8 @@ devtools::load_all()
 
 ```{r message = FALSE, include = !knitr::is_html_output()}
 experiments <- read_all_experiments('./data/do/g1761924045/', label = 'deluge') |>
-  merge_experiments(read_all_experiments('./data/do/g1762505060/', label = 'codex-baseline')) |>
-  merge_experiments(read_all_experiments('./data/do/g1761729711/', label = 'codex-optimized')) |>
+  merge_experiments(read_all_experiments('./data/do/g1762505060/', label = 'storage-baseline')) |>
+  merge_experiments(read_all_experiments('./data/do/g1761729711/', label = 'storage-optimized')) |>
   merge_experiments(read_all_experiments('./data/do/g1775565300/', label = 'new-protocol'))
 ```
 
@@ -118,13 +118,13 @@ DT::datatable(
 relative_performance <- compute_speedups(
   benchmarks = benchmarks,
   base = 'deluge',
-  compare = c('codex-baseline', 'codex-optimized', 'new-protocol')
+  compare = c('storage-baseline', 'storage-optimized', 'new-protocol')
 )
 ```
 
 ## Median Download Speed
 
-```{r fig.cap='Median download speed for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
+```{r fig.cap='Median download speed for Deluge and Logos Storage', fig.width = 11, message = FALSE, echo = FALSE}
 comparison_plot(
   benchmarks,
   completion_p25_speed,
@@ -150,7 +150,7 @@ comparison_plot(
 
 ## Median Download Time
 
-```{r fig.cap='Median time to download a whole file for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
+```{r fig.cap='Median time to download a whole file for Deluge and Logos Storage', fig.width = 11, message = FALSE, echo = FALSE}
 comparison_plot(
   benchmarks,
   completion_p25,
@@ -165,7 +165,7 @@ comparison_plot(
 
 The time elapsed from the moment in which we ask a node to download a file to the time in which it logs having downloaded the first $x\%$ of the file -- whatever the logging granularity is -- marks our time to first byte. This is actually an approximation which factors in _i)_ DHT lookup latency; _ii)_ swarm bootstrap latency; _iii)_ a fraction, typically $1/100^{th}$, of the download time. This should impact smaller files more than it impacts larger files.
 
-```{r fig.cap='Median time-to-first-byte for Deluge and Codex', fig.width = 11, message = FALSE, echo = FALSE}
+```{r fig.cap='Median time-to-first-byte for Deluge and Logos Storage', fig.width = 11, message = FALSE, echo = FALSE}
 comparison_plot(
   benchmarks,
   first_byte_p25,
@@ -178,10 +178,10 @@ comparison_plot(
 
 ## Median Download Time Ratio
 
-Let $t_d$ and $t_c$ be the median times that Deluge and Codex, respectively, take to download some file of a given size. The median download time ratio is defined as $m = t_c / t_d$.
-When $m < 1$, Codex is faster than Deluge. It is otherwise $m$ times slower to download the same file.
+Let $t_d$ and $t_c$ be the median times that Deluge and Logos Storage, respectively, take to download some file of a given size. The median download time ratio is defined as $m = t_c / t_d$.
+When $m < 1$, Logos Storage is faster than Deluge. It is otherwise $m$ times slower to download the same file.
 
-```{r fig.cap='Median downlaod time ratio for Codex and Deluge', fig.width = 11, message = FALSE, echo = FALSE}
+```{r fig.cap='Median downlaod time ratio for Logos Storage and Deluge', fig.width = 11, message = FALSE, echo = FALSE}
 ggplot(relative_performance, aes(col = label, group = label)) +
   geom_line(aes(x = network_size, y = relative_median, col = label), lwd=1) +
   geom_hline(yintercept = 1, linetype = 'dashed', col = 'darkgray') +
